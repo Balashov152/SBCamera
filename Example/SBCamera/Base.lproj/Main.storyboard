@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14865.1" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14865.1" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="vXZ-lx-hvc">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14819.2"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -11,29 +12,39 @@
         <scene sceneID="ufC-wZ-h7g">
             <objects>
                 <viewController id="vXZ-lx-hvc" customClass="ViewController" customModule="SBCamera_Example" customModuleProvider="target" sceneMemberID="viewController">
-                    <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="jyV-Pf-zRb"/>
-                        <viewControllerLayoutGuide type="bottom" id="2fi-mo-0CV"/>
-                    </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="kh9-bI-dsS">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="r97-dF-CH2">
-                                <rect key="frame" x="160" y="318" width="54" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Camera"/>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="r97-dF-CH2">
+                                <rect key="frame" x="142" y="587" width="91" height="30"/>
+                                <state key="normal" title="show camera"/>
                                 <connections>
                                     <action selector="openCamera:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="dt1-dj-4V1"/>
                                 </connections>
                             </button>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="iwp-Sj-svE">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="533.5"/>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="oHU-rA-wBL" firstAttribute="bottom" secondItem="r97-dF-CH2" secondAttribute="bottom" constant="50" id="5ii-mx-g7d"/>
+                            <constraint firstItem="oHU-rA-wBL" firstAttribute="trailing" secondItem="iwp-Sj-svE" secondAttribute="trailing" id="HzW-ML-YEd"/>
+                            <constraint firstItem="r97-dF-CH2" firstAttribute="centerX" secondItem="oHU-rA-wBL" secondAttribute="centerX" id="ZGj-vC-pae"/>
+                            <constraint firstItem="iwp-Sj-svE" firstAttribute="height" secondItem="oHU-rA-wBL" secondAttribute="height" multiplier="0.8" id="ipr-h5-vh4"/>
+                            <constraint firstItem="iwp-Sj-svE" firstAttribute="top" secondItem="oHU-rA-wBL" secondAttribute="top" id="mh6-Or-UBx"/>
+                            <constraint firstItem="iwp-Sj-svE" firstAttribute="leading" secondItem="oHU-rA-wBL" secondAttribute="leading" id="qKV-HQ-350"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="oHU-rA-wBL"/>
                     </view>
+                    <connections>
+                        <outlet property="imageView" destination="iwp-Sj-svE" id="0pP-21-5lP"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="140" y="134"/>
+            <point key="canvasLocation" x="140" y="133.5832083958021"/>
         </scene>
     </scenes>
 </document>

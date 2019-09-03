@@ -20,6 +20,8 @@ public protocol SBCameraViewControllble {
 public class SBCameraConfig {
     private init() {}
     static var isEnableVolumeButton = true
+    static var writeFilesToPhoneLibrary = true
+    static var shouldFlipFrontCameraImage = true
 }
 
 public protocol SBCameraDelegate: class {
@@ -44,7 +46,7 @@ open class SBCamera: NSObject {
     private lazy var cameraManager = CameraManager()
     private lazy var imagePickerController = UIImagePickerController()
     
-    public init(controller: ViewController = SBCameraController(), typeMedia: TypeMedia) {
+    public init(controller: ViewController, typeMedia: TypeMedia) {
         self.viewController = controller
         self.typeMedia = typeMedia
         
@@ -52,6 +54,8 @@ open class SBCamera: NSObject {
         
         cameraManager.cameraOutputQuality = .high
         cameraManager.cameraDevice = .front
+        cameraManager.shouldFlipFrontCameraImage = false // animation change front/back camera
+        cameraManager.writeFilesToPhoneLibrary = false
         
         if SBCameraConfig.isEnableVolumeButton {
             listenVolumeButton()
@@ -66,6 +70,10 @@ open class SBCamera: NSObject {
     
     //MARK: Public
     open func openLibrary() {
+        guard Bundle.main.object(forInfoDictionaryKey: "NSPhotoLibraryUsageDescription") != nil else {
+            assertionFailure("Need fill key NSPhotoLibraryUsageDescription in Info.plist")
+            return
+        }
         PermissionManager().checkPermission(type: .photoLibrary, createRequestIfNeed: true, denied: {
             PermissionManager().openSettings(type: .photoLibrary)
         }) { [weak self] in
@@ -76,6 +84,10 @@ open class SBCamera: NSObject {
     }
     
     open func initCameraView() {
+        guard Bundle.main.object(forInfoDictionaryKey: "NSCameraUsageDescription") != nil else {
+            assertionFailure("Need fill key NSCameraUsageDescription in Info.plist")
+            return
+        }
         PermissionManager().checkPermission(type: .camera, createRequestIfNeed: true, denied: {
             PermissionManager().openSettings(type: .camera)
         }) { [weak self] in
@@ -87,26 +99,23 @@ open class SBCamera: NSObject {
     }
     
     open func capturePhoto() {
-        switch typeMedia {
-        case .uiImage:
-            cameraManager.capturePictureImageWithCompletion { [weak self] image, error in
-                guard let self = self else { return }
-                if let error = error {
-                    self.delegate?.sbCamera(self, catchError: error)
-                } else if let image = image {
-                    self.delegate?.sbCamera(self, didCreateUIImage: image)
-                }
-            }
-        case .phAssetImage:
-            cameraManager.capturePictureAssetWithCompletion { [weak self] asset, error in
-                guard let self = self else { return }
-                if let error = error {
-                    self.delegate?.sbCamera(self, catchError: error)
-                } else if let asset = asset {
+        cameraManager.writeFilesToPhoneLibrary = typeMedia == .phAssetImage
+        cameraManager.capturePictureWithCompletion { (result) in
+            switch result {
+            case let .success(content: content):
+                switch content {
+                case let .asset(asset):
                     self.delegate?.sbCamera(self, didCreatePHAsset: asset)
+                case let .image(image):
+                    self.delegate?.sbCamera(self, didCreateUIImage: image)
+                case let .imageData(data):
+                    debugPrint("imageData(data)", data)
                 }
+            case let .failure(error):
+                self.delegate?.sbCamera(self, catchError: error)
             }
         }
+
     }
     
     open func switchCamera() {
@@ -134,12 +143,6 @@ open class SBCamera: NSObject {
             return
         }
         cameraManager.addPreviewLayerToView(cameraView, newCameraOutputMode: CameraOutputMode.stillImage)
-        
-        //        cameraManager.showErrorBlock = { (_: String, erMessage: String) -> Void in
-        //            showErrorOKAlert(message: erMessage)
-        //        }
-        
-        cameraManager.shouldFlipFrontCameraImage = false // animation change front/back camera
     }
     
     private func openImagePicker() {
@@ -217,7 +220,7 @@ public extension SBCamera {
     
     override func observeValue(forKeyPath keyPath: String?, of _: Any?, change _: [NSKeyValueChangeKey: Any]?, context _: UnsafeMutableRawPointer?) {
         if keyPath == "outputVolume" {
-            //            capturePhoto()
+            capturePhoto()
         }
     }
 }

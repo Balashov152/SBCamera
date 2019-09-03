@@ -7,17 +7,17 @@
 //
 
 import UIKit
-import SBCamera
 
 class ViewController: UIViewController {
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-    }
+    @IBOutlet var imageView: UIImageView!
     
     @IBAction func openCamera(_ sender: UIButton) {
-//        let vc =
+        let vc = CameraViewController(nibName: "CameraViewController", bundle: nil)
+        vc.didCreatePhoto = { [weak imageView] image in
+            imageView?.image = image
+        }
+        present(vc, animated: true, completion: nil)
     }
 }
 
