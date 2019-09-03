@@ -23,9 +23,9 @@ public class SBCameraConfig {
 }
 
 public protocol SBCameraDelegate: class {
-    func didCreateUIImage(_ camera: SBCamera, image: UIImage)
-    func didCreatePHAsset(_ camera: SBCamera, asset: PHAsset)
-    func catchError(_ camera: SBCamera, error: Error)
+    func sbCamera(_ camera: SBCamera, didCreateUIImage image: UIImage)
+    func sbCamera(_ camera: SBCamera, didCreatePHAsset asset: PHAsset)
+    func sbCamera(_ camera: SBCamera, catchError error: Error)
 }
 
 public extension SBCamera {
@@ -92,18 +92,18 @@ open class SBCamera: NSObject {
             cameraManager.capturePictureImageWithCompletion { [weak self] image, error in
                 guard let self = self else { return }
                 if let error = error {
-                    self.delegate?.catchError(self, error: error)
+                    self.delegate?.sbCamera(self, catchError: error)
                 } else if let image = image {
-                    self.delegate?.didCreateUIImage(self, image: image)
+                    self.delegate?.sbCamera(self, didCreateUIImage: image)
                 }
             }
         case .phAssetImage:
             cameraManager.capturePictureAssetWithCompletion { [weak self] asset, error in
                 guard let self = self else { return }
                 if let error = error {
-                    self.delegate?.catchError(self, error: error)
+                    self.delegate?.sbCamera(self, catchError: error)
                 } else if let asset = asset {
-                    self.delegate?.didCreatePHAsset(self, asset: asset)
+                    self.delegate?.sbCamera(self, didCreatePHAsset: asset)
                 }
             }
         }
@@ -165,12 +165,12 @@ open class SBCamera: NSObject {
             if mediaType == (kUTTypeImage as String) {
                 if #available(iOS 11.0, *) {
                     if let asset = info[.phAsset] as? PHAsset {
-                        delegate?.didCreatePHAsset(self, asset: asset)
+                        delegate?.sbCamera(self, didCreatePHAsset: asset)
                     }
                 } else {
                     if let url = info[.referenceURL] as? URL {
                         if let asset = PHAsset.fetchAssets(withALAssetURLs: [url], options: nil).firstObject {
-                            delegate?.didCreatePHAsset(self, asset: asset)
+                            delegate?.sbCamera(self, didCreatePHAsset: asset)
                         }
                     }
                 }
@@ -179,7 +179,7 @@ open class SBCamera: NSObject {
         case .uiImage:
             if mediaType == (kUTTypeImage as String) {
                 if let image = info[.originalImage] as? UIImage {
-                    delegate?.didCreateUIImage(self, image: image)
+                    delegate?.sbCamera(self, didCreateUIImage: image)
                 }
             }
             
