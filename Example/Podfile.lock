@@ -1,0 +1,23 @@
+PODS:
+  - SBCamera (0.1.0):
+    - SwiftPermissionManager (~> 0.1)
+  - SwiftPermissionManager (0.1.2)
+
+DEPENDENCIES:
+  - SBCamera (from `../`)
+
+SPEC REPOS:
+  trunk:
+    - SwiftPermissionManager
+
+EXTERNAL SOURCES:
+  SBCamera:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  SBCamera: d56e33031b7b63968bc679c00e18576df4f44696
+  SwiftPermissionManager: 4e928e1553e1687d7cce691bcd198b1ab6c66296
+
+PODFILE CHECKSUM: 714536f263393165ec0625911e75f271c6e4c72e
+
+COCOAPODS: 1.8.0.beta.2
