@@ -27,7 +27,7 @@ public class SBCameraConfig {
     
     static var cropMode: RSKImageCropMode = .square
     static var isNeedOpenRSKImageCropper = true
-    
+    static var possibleEmptySpaceAroundCroppedImage = false
 }
 
 public protocol SBCameraDelegate: class {
@@ -202,8 +202,7 @@ open class SBCamera: NSObject {
     private func cropImage(image: UIImage) {
         let cropper = RSKImageCropViewController(image: image, cropMode: SBCameraConfig.cropMode)
         cropper.delegate = self
-        cropper.avoidEmptySpaceAroundImage = true
-        print("cropImage")
+        cropper.avoidEmptySpaceAroundImage = !SBCameraConfig.possibleEmptySpaceAroundCroppedImage
         viewController?.present(cropper, animated: true, completion: nil)
     }
 }
