@@ -18,18 +18,6 @@ public protocol SBCameraViewControllble {
     var cameraView: UIView { get }
 }
 
-public class SBCameraConfig {
-    private init() {}
-    static var isEnableVolumeButton = true
-    static var writeFilesToPhoneLibrary = true
-    static var shouldFlipFrontCameraImage = false
-    static var cropImageToSizeCameraView = true
-    
-    static var cropMode: RSKImageCropMode = .square
-    static var isNeedOpenRSKImageCropper = true
-    static var possibleEmptySpaceAroundCroppedImage = false
-}
-
 public protocol SBCameraDelegate: class {
     func sbCamera(_ camera: SBCamera, didCreateUIImage image: UIImage)
     func sbCamera(_ camera: SBCamera, didCreatePHAsset asset: PHAsset)
@@ -45,11 +33,17 @@ public extension SBCamera {
 open class SBCamera: NSObject {
     public typealias ViewController = UIViewController & SBCameraViewControllble
     
-    public weak var viewController: ViewController?
-    public weak var delegate: SBCameraDelegate?
-    public var typeMedia: TypeMedia
+    open weak var viewController: ViewController?
+    open weak var delegate: SBCameraDelegate?
+    open var typeMedia: TypeMedia
     
-    private lazy var cameraManager = CameraManager()
+    open var isEnableVolumeButton = true
+    
+    open var cropMode: RSKImageCropMode = .square
+    open var isNeedOpenRSKImageCropper = true
+    open var possibleEmptySpaceAroundCroppedImage = false
+    
+    lazy var cameraManager = CameraManager()
     private lazy var imagePickerController = UIImagePickerController()
     
     public init(controller: ViewController, typeMedia: TypeMedia) {
@@ -58,13 +52,7 @@ open class SBCamera: NSObject {
         
         super.init()
         
-        cameraManager.cameraOutputQuality = .high
-        cameraManager.cameraDevice = .front
-        cameraManager.shouldFlipFrontCameraImage = SBCameraConfig.shouldFlipFrontCameraImage
-        cameraManager.writeFilesToPhoneLibrary = SBCameraConfig.writeFilesToPhoneLibrary
-        cameraManager.cropImageToSizeCameraView = SBCameraConfig.cropImageToSizeCameraView
-        
-        if SBCameraConfig.isEnableVolumeButton {
+        if isEnableVolumeButton {
             listenVolumeButton()
         }
     }
@@ -188,7 +176,7 @@ open class SBCamera: NSObject {
         case .uiImage:
             if mediaType == (kUTTypeImage as String) {
                 if let image = info[.originalImage] as? UIImage {
-                    if SBCameraConfig.isNeedOpenRSKImageCropper {
+                    if isNeedOpenRSKImageCropper {
                         cropImage(image: image)
                     } else {
                         delegate?.sbCamera(self, didCreateUIImage: image)
@@ -200,9 +188,9 @@ open class SBCamera: NSObject {
     }
     
     private func cropImage(image: UIImage) {
-        let cropper = RSKImageCropViewController(image: image, cropMode: SBCameraConfig.cropMode)
+        let cropper = RSKImageCropViewController(image: image, cropMode: cropMode)
         cropper.delegate = self
-        cropper.avoidEmptySpaceAroundImage = !SBCameraConfig.possibleEmptySpaceAroundCroppedImage
+        cropper.avoidEmptySpaceAroundImage = !possibleEmptySpaceAroundCroppedImage
         viewController?.present(cropper, animated: true, completion: nil)
     }
 }
