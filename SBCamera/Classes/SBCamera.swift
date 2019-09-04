@@ -12,6 +12,7 @@ import MobileCoreServices
 import Photos
 import SwiftPermissionManager
 import UIKit
+import RSKImageCropper
 
 public protocol SBCameraViewControllble {
     var cameraView: UIView { get }
@@ -21,7 +22,12 @@ public class SBCameraConfig {
     private init() {}
     static var isEnableVolumeButton = true
     static var writeFilesToPhoneLibrary = true
-    static var shouldFlipFrontCameraImage = true
+    static var shouldFlipFrontCameraImage = false
+    static var cropImageToSizeCameraView = true
+    
+    static var cropMode: RSKImageCropMode = .square
+    static var isNeedOpenRSKImageCropper = true
+    
 }
 
 public protocol SBCameraDelegate: class {
@@ -54,8 +60,9 @@ open class SBCamera: NSObject {
         
         cameraManager.cameraOutputQuality = .high
         cameraManager.cameraDevice = .front
-        cameraManager.shouldFlipFrontCameraImage = false // animation change front/back camera
-        cameraManager.writeFilesToPhoneLibrary = false
+        cameraManager.shouldFlipFrontCameraImage = SBCameraConfig.shouldFlipFrontCameraImage
+        cameraManager.writeFilesToPhoneLibrary = SBCameraConfig.writeFilesToPhoneLibrary
+        cameraManager.cropImageToSizeCameraView = SBCameraConfig.cropImageToSizeCameraView
         
         if SBCameraConfig.isEnableVolumeButton {
             listenVolumeButton()
@@ -99,7 +106,6 @@ open class SBCamera: NSObject {
     }
     
     open func capturePhoto() {
-        cameraManager.writeFilesToPhoneLibrary = typeMedia == .phAssetImage
         cameraManager.capturePictureWithCompletion { (result) in
             switch result {
             case let .success(content: content):
@@ -161,7 +167,7 @@ open class SBCamera: NSObject {
     
     private func doneSeletedMediaFromLibrary(pickerInfo info: [UIImagePickerController.InfoKey: Any]) {
         guard let mediaType = info[.mediaType] as? String else { return }
-        print("Image Selected")
+        print("Image selected from library")
         
         switch typeMedia {
         case .phAssetImage:
@@ -182,11 +188,35 @@ open class SBCamera: NSObject {
         case .uiImage:
             if mediaType == (kUTTypeImage as String) {
                 if let image = info[.originalImage] as? UIImage {
-                    delegate?.sbCamera(self, didCreateUIImage: image)
+                    if SBCameraConfig.isNeedOpenRSKImageCropper {
+                        cropImage(image: image)
+                    } else {
+                        delegate?.sbCamera(self, didCreateUIImage: image)
+                    }
                 }
             }
             
         }
+    }
+    
+    private func cropImage(image: UIImage) {
+        let cropper = RSKImageCropViewController(image: image, cropMode: SBCameraConfig.cropMode)
+        cropper.delegate = self
+        viewController?.present(cropper, animated: true, completion: nil)
+    }
+}
+
+extension SBCamera: RSKImageCropViewControllerDelegate {
+    public func imageCropViewControllerDidCancelCrop(_ controller: RSKImageCropViewController) {
+        controller.dismiss(animated: true, completion: nil)
+    }
+    
+    public func imageCropViewController(_ controller: RSKImageCropViewController, didCropImage croppedImage: UIImage, usingCropRect cropRect: CGRect, rotationAngle: CGFloat) {
+        controller.dismiss(animated: true, completion: { [weak self] in
+            if let self = self {
+                self.delegate?.sbCamera(self, didCreateUIImage: croppedImage)
+            }
+        })
     }
 }
 

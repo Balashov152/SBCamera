@@ -40,4 +40,6 @@ Pod::Spec.new do |s|
   # s.public_header_files = 'Pod/Classes/**/*.h'
    s.frameworks = 'UIKit', 'Photos'
    s.dependency 'SwiftPermissionManager', '~> 0.1'
+   s.dependency 'RSKImageCropper', '~> 2.2'
+   
 end

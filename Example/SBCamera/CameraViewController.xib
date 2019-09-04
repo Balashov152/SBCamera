@@ -24,8 +24,11 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ke2-qB-5I4">
-                    <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                    <rect key="frame" x="0.0" y="223.66666666666663" width="375" height="375"/>
                     <color key="backgroundColor" white="0.66666666669999997" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="width" secondItem="ke2-qB-5I4" secondAttribute="height" multiplier="1:1" id="b5b-Ol-cYV"/>
+                    </constraints>
                 </view>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0sB-XD-5v5">
                     <rect key="frame" x="150" y="681" width="75" height="75"/>
@@ -73,13 +76,13 @@
             </subviews>
             <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
             <constraints>
-                <constraint firstAttribute="bottom" secondItem="ke2-qB-5I4" secondAttribute="bottom" id="69b-1c-ENc"/>
+                <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="ke2-qB-5I4" secondAttribute="bottom" id="69b-1c-ENc"/>
                 <constraint firstItem="0sB-XD-5v5" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Qo8-3H-Ax4" secondAttribute="trailing" constant="20" id="8MG-fY-nhA"/>
                 <constraint firstItem="UoH-ut-Aph" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="0sB-XD-5v5" secondAttribute="trailing" constant="20" id="DVS-2g-JLN"/>
                 <constraint firstItem="g9R-BZ-JMj" firstAttribute="top" secondItem="ZZu-lJ-0bm" secondAttribute="bottom" constant="8" id="Du8-v2-vVa"/>
                 <constraint firstItem="UoH-ut-Aph" firstAttribute="centerY" secondItem="0sB-XD-5v5" secondAttribute="centerY" id="JCE-Sc-FyX"/>
                 <constraint firstItem="FhK-x0-Ivr" firstAttribute="trailing" secondItem="g9R-BZ-JMj" secondAttribute="trailing" constant="20" id="MA3-YM-QgM"/>
-                <constraint firstItem="ke2-qB-5I4" firstAttribute="top" secondItem="UaL-rp-s1H" secondAttribute="top" id="QTz-V7-0Ar"/>
+                <constraint firstItem="ke2-qB-5I4" firstAttribute="top" relation="greaterThanOrEqual" secondItem="UaL-rp-s1H" secondAttribute="top" id="QTz-V7-0Ar"/>
                 <constraint firstItem="Qo8-3H-Ax4" firstAttribute="centerY" secondItem="0sB-XD-5v5" secondAttribute="centerY" id="XUU-60-8Om"/>
                 <constraint firstItem="0sB-XD-5v5" firstAttribute="centerX" secondItem="FhK-x0-Ivr" secondAttribute="centerX" id="YCk-3O-LPA"/>
                 <constraint firstItem="FhK-x0-Ivr" firstAttribute="trailing" secondItem="ZZu-lJ-0bm" secondAttribute="trailing" constant="20" id="YzF-fl-MI8"/>
@@ -89,6 +92,7 @@
                 <constraint firstItem="ke2-qB-5I4" firstAttribute="trailing" secondItem="FhK-x0-Ivr" secondAttribute="trailing" id="qIB-B1-Uxz"/>
                 <constraint firstItem="ZZu-lJ-0bm" firstAttribute="top" secondItem="FhK-x0-Ivr" secondAttribute="top" constant="8" id="sRF-rV-aXj"/>
                 <constraint firstItem="ke2-qB-5I4" firstAttribute="leading" secondItem="FhK-x0-Ivr" secondAttribute="leading" id="w5A-KF-488"/>
+                <constraint firstItem="ke2-qB-5I4" firstAttribute="centerY" secondItem="FhK-x0-Ivr" secondAttribute="centerY" id="wBu-nV-KFx"/>
                 <constraint firstItem="Qo8-3H-Ax4" firstAttribute="leading" secondItem="FhK-x0-Ivr" secondAttribute="leading" constant="28" id="zX1-o1-mIi"/>
             </constraints>
             <viewLayoutGuide key="safeArea" id="FhK-x0-Ivr"/>

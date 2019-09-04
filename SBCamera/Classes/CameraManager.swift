@@ -40,18 +40,6 @@ public enum CaptureResult {
     case success(content: CaptureContent)
     case failure(Error)
     
-    init(image: UIImage) {
-        self = .success(content: .image(image))
-    }
-    
-    init(data: Data) {
-        self = .success(content: .imageData(data))
-    }
-    
-    init(asset: PHAsset) {
-        self = .success(content: .asset(asset))
-    }
-    
     var imageData: Data? {
         if case let .success(content) = self {
             return content.asData
@@ -123,10 +111,13 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     
     // MARK: - Public properties
     
-    // Property for custom image album name.
+    /// Property for custom image album name.
+    open var cropImageToSizeCameraView = false
+    
+    /// Property for custom image album name.
     open var imageAlbumName: String?
     
-    // Property for custom image album name.
+    /// Property for custom image album name.
     open var videoAlbumName: String?
     
     /// Property for capture session to customize camera settings.
@@ -514,28 +505,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      
      :param: imageCompletion Completion block containing the captured UIImage
      */
-    @available(*, deprecated)
-    open func capturePictureWithCompletion(_ imageCompletion: @escaping (UIImage?, NSError?) -> Void) {
-        
-        func completion(_ result: CaptureResult) {
-            
-            switch result {
-                
-            case let .success(content):
-                imageCompletion(content.asImage, nil)
-            case .failure:
-                imageCompletion(nil, NSError())
-            }
-        }
-        
-        capturePictureWithCompletion(completion)
-    }
-    
-    /**
-     Captures still image from currently running capture session.
-     
-     :param: imageCompletion Completion block containing the captured UIImage
-     */
     open func capturePictureWithCompletion(_ imageCompletion: @escaping (CaptureResult) -> Void) {
         self.capturePictureDataWithCompletion { result in
             
@@ -566,11 +535,46 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             return
         }
         
-        let image = fixOrientation(withImage: img)
-        
+        var image = fixOrientation(withImage: img)
+        if  cropImageToSizeCameraView,
+            let size = embeddingView?.frame.size,
+            let cgImage = image.cgImage {
+            let contextImage: UIImage = UIImage(cgImage: cgImage)
+            let contextSize: CGSize = contextImage.size
+            var posX: CGFloat = 0.0
+            var posY: CGFloat = 0.0
+            var cgwidth: CGFloat = size.width
+            var cgheight: CGFloat = size.height
+            
+            // See what size is longer and create the center off of that
+            if contextSize.width > contextSize.height {
+                posX = ((contextSize.width - contextSize.height) / 2)
+                posY = 0
+                cgwidth = contextSize.height
+                cgheight = contextSize.height
+            } else {
+                posX = 0
+                posY = ((contextSize.height - contextSize.width) / 2)
+                cgwidth = contextSize.width
+                cgheight = contextSize.width
+            }
+            
+            let rect: CGRect = CGRect(x: posX, y: posY, width: cgwidth, height: cgheight)
+            
+            // Create bitmap image from context using the rect
+            if let imageRef: CGImage = cgImage.cropping(to: rect) {
+                // Create a new image based on the imageRef and rotate back to the original orientation
+                image = UIImage(cgImage: imageRef, scale: image.scale, orientation: image.imageOrientation)
+            }
+        }
+        _saveOrNotCapturePicture(image: image, imageCompletion: imageCompletion)
+    }
+    
+    fileprivate func _saveOrNotCapturePicture(image: UIImage, imageCompletion: @escaping (CaptureResult) -> Void) {
         if writeFilesToPhoneLibrary {
             
             let filePath = _tempFilePath()
+            let imageData = image.jpegData(compressionQuality: 1.0)!
             let newImageData = _imageDataWithEXIF(forImage: image, imageData) as Data
             
             do {
@@ -593,8 +597,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 return
             }
         }
-        
-        imageCompletion(CaptureResult(image: image))
+        imageCompletion(.success(content: .image(image)))
     }
     
     fileprivate func _setVideoWithGPS(forLocation location: CLLocation) {
@@ -663,32 +666,11 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         library?.save(imageAtURL: filePath, albumName: self.imageAlbumName, date: date, location: location) { asset in
             
             if let asset = asset {
-                imageCompletion(CaptureResult(asset: asset))
+                imageCompletion(.success(content: .asset(asset)))
             } else {
                 imageCompletion(.failure(CaptureError.assetNotSaved))
             }
         }
-    }
-    
-    /**
-     Captures still image from currently running capture session.
-     
-     :param: imageCompletion Completion block containing the captured imageData
-     */
-    @available(*, deprecated)
-    open func capturePictureDataWithCompletion(_ imageCompletion: @escaping (Data?, NSError?) -> Void) {
-        
-        func completion(_ result: CaptureResult) {
-            
-            switch result {
-                
-            case let .success(content):
-                imageCompletion(content.asData, nil)
-            case .failure:
-                imageCompletion(nil, NSError())
-            }
-        }
-        capturePictureDataWithCompletion(completion)
     }
     
     /**
@@ -731,8 +713,9 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                     }
                     
                     guard let sample = sample else { imageCompletion(.failure(CaptureError.noSampleBuffer)); return }
+                    
                     if let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(sample) {
-                        imageCompletion(CaptureResult(data: imageData))
+                        imageCompletion(.success(content: .imageData(imageData)))
                     } else {
                         imageCompletion(.failure(CaptureError.noImageData))
                     }
@@ -1406,15 +1389,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     fileprivate func fixOrientation(withImage image: UIImage) -> UIImage {
         guard let cgImage = image.cgImage else { return image }
         
-        var isMirrored = false
-        let orientation = image.imageOrientation
-        if orientation == .rightMirrored
-            || orientation == .leftMirrored
-            || orientation == .upMirrored
-            || orientation == .downMirrored {
-            
-            isMirrored = true
-        }
+        let mirroredOrientations: [UIImage.Orientation] = [.rightMirrored, .leftMirrored, .upMirrored, .downMirrored]
+        let isMirrored = mirroredOrientations.contains(image.imageOrientation)
         
         let newOrientation = _imageOrientation(forDeviceOrientation: deviceOrientation, isMirrored: isMirrored)
         
