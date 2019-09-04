@@ -202,6 +202,10 @@ open class SBCamera: NSObject {
     private func cropImage(image: UIImage) {
         let cropper = RSKImageCropViewController(image: image, cropMode: SBCameraConfig.cropMode)
         cropper.delegate = self
+        cropper.isRotationEnabled = true
+        cropper.avoidEmptySpaceAroundImage = true
+        cropper.applyMaskToCroppedImage = true
+        print("cropImage")
         viewController?.present(cropper, animated: true, completion: nil)
     }
 }
