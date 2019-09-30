@@ -46,4 +46,12 @@ extension SBCamera {
         }
     }
     
+    open var shouldRespondToOrientationChanges: Bool {
+        get {
+            return cameraManager.shouldRespondToOrientationChanges
+        } set {
+            cameraManager.shouldRespondToOrientationChanges = newValue
+        }
+    }
+    
 }
