@@ -61,6 +61,9 @@ open class SBCamera: NSObject {
         unlistenVolumeButton()
         cameraManager.stopCaptureSession()
         cameraManager.deleteCameraManagersFiles()
+        DispatchQueue.main.async {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
     }
     
     //MARK: Public
