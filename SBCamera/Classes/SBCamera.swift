@@ -40,7 +40,8 @@ open class SBCamera: NSObject {
     open var isEnableVolumeButton = true
     
     open var cropMode: RSKImageCropMode = .square
-    open var isNeedOpenRSKImageCropper = true
+    open var isNeedOpenRSKImageCropperLibrary = true
+    open var isNeedOpenRSKImageCropperCamera = true
     open var possibleEmptySpaceAroundCroppedImage = false
     
     lazy var cameraManager = CameraManager()
@@ -97,14 +98,19 @@ open class SBCamera: NSObject {
     }
     
     open func capturePhoto() {
-        cameraManager.capturePictureWithCompletion { (result) in
+        cameraManager.capturePictureWithCompletion { [weak self] (result) in
+            guard let self = self else { return }
             switch result {
             case let .success(content: content):
                 switch content {
                 case let .asset(asset):
                     self.delegate?.sbCamera(self, didCreatePHAsset: asset)
                 case let .image(image):
-                    self.delegate?.sbCamera(self, didCreateUIImage: image)
+                    if self.isNeedOpenRSKImageCropperCamera {
+                        self.cropImage(image: image)
+                    } else {
+                        self.delegate?.sbCamera(self, didCreateUIImage: image)
+                    }
                 case let .imageData(data):
                     debugPrint("imageData(data)", data)
                 }
@@ -179,7 +185,7 @@ open class SBCamera: NSObject {
         case .uiImage:
             if mediaType == (kUTTypeImage as String) {
                 if let image = info[.originalImage] as? UIImage {
-                    if isNeedOpenRSKImageCropper {
+                    if isNeedOpenRSKImageCropperLibrary {
                         cropImage(image: image)
                     } else {
                         delegate?.sbCamera(self, didCreateUIImage: image)
