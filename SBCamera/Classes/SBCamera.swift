@@ -98,6 +98,16 @@ open class SBCamera: NSObject {
     }
     
     open func capturePhoto() {
+        PermissionManager().checkPermission(type: .camera, createRequestIfNeed: true, denied: {
+            PermissionManager().openSettings(type: .camera)
+        }) { [weak self] in
+            DispatchQueue.main.async {
+                self?.capturePicturePhoto()
+            }
+        }
+    }
+    
+    private func capturePicturePhoto() {
         cameraManager.capturePictureWithCompletion { [weak self] (result) in
             guard let self = self else { return }
             switch result {
