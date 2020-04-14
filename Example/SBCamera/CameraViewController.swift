@@ -28,6 +28,8 @@ class CameraViewController: UIViewController, SBCameraViewControllble {
         super.viewDidLoad()
         sbCamera.delegate = self
         sbCamera.initCameraView()
+        sbCamera.cropImageToSizeCameraView = false
+        sbCamera.possibleEmptySpaceAroundCroppedImage = true
     }
 
     // MARK: Actions

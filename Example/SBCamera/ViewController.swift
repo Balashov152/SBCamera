@@ -10,7 +10,11 @@ import UIKit
 
 class ViewController: UIViewController {
 
-    @IBOutlet var imageView: UIImageView!
+    @IBOutlet var imageView: UIImageView! {
+        didSet {
+            imageView.backgroundColor = .red
+        }
+    }
     
     @IBAction func openCamera(_ sender: UIButton) {
         let vc = CameraViewController(nibName: "CameraViewController", bundle: nil)
