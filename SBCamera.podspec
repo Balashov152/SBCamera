@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SBCamera'
-  s.version          = '0.2.6'
+  s.version          = '0.2.7'
   s.summary          = 'Swift camera SBCamera. Will include photo from library, cropper, and simple filter.'
   s.swift_versions   = '5.0'
 # This description is used to generate tags and improve search results.

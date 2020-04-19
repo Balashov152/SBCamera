@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		13E1745E4468C960A087B2FC /* Pods_SBCamera_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44AE389C7AF73D571BEBB903 /* Pods_SBCamera_Example.framework */; };
 		4EEE6BD872F260D0FA95635A /* Pods_SBCamera_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 693DA9905B206C1EEEFE34BE /* Pods_SBCamera_Tests.framework */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
@@ -17,6 +16,7 @@
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
 		EF3418A2231E922200B87A2F /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF3418A0231E922200B87A2F /* CameraViewController.swift */; };
 		EF3418A3231E922200B87A2F /* CameraViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = EF3418A1231E922200B87A2F /* CameraViewController.xib */; };
+		EF973E00244C4F1600BD3BC9 /* Pods_SBCamera_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44AE389C7AF73D571BEBB903 /* Pods_SBCamera_Example.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +50,9 @@
 		E6FFE0E3B5B6BA43A10354A5 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		EF3418A0231E922200B87A2F /* CameraViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 		EF3418A1231E922200B87A2F /* CameraViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CameraViewController.xib; sourceTree = "<group>"; };
+		EF973DF6244C4F0400BD3BC9 /* RSKImageCropper.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RSKImageCropper.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF973DF7244C4F0400BD3BC9 /* SBCamera.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SBCamera.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF973DF8244C4F0400BD3BC9 /* SwiftPermissionManager.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftPermissionManager.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2E2316C49605932CFCC976E /* Pods-SBCamera_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SBCamera_Tests.debug.xcconfig"; path = "Target Support Files/Pods-SBCamera_Tests/Pods-SBCamera_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -58,7 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				13E1745E4468C960A087B2FC /* Pods_SBCamera_Example.framework in Frameworks */,
+				EF973E00244C4F1600BD3BC9 /* Pods_SBCamera_Example.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,6 +79,9 @@
 		0AFA44288FD3B619D6BB80B1 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				EF973DF6244C4F0400BD3BC9 /* RSKImageCropper.framework */,
+				EF973DF7244C4F0400BD3BC9 /* SBCamera.framework */,
+				EF973DF8244C4F0400BD3BC9 /* SwiftPermissionManager.framework */,
 				44AE389C7AF73D571BEBB903 /* Pods_SBCamera_Example.framework */,
 				693DA9905B206C1EEEFE34BE /* Pods_SBCamera_Tests.framework */,
 			);
@@ -308,14 +314,12 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-SBCamera_Example/Pods-SBCamera_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/CropViewController/CropViewController.framework",
 				"${BUILT_PRODUCTS_DIR}/RSKImageCropper/RSKImageCropper.framework",
 				"${BUILT_PRODUCTS_DIR}/SBCamera/SBCamera.framework",
 				"${BUILT_PRODUCTS_DIR}/SwiftPermissionManager/SwiftPermissionManager.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CropViewController.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RSKImageCropper.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SBCamera.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftPermissionManager.framework",

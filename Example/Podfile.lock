@@ -1,8 +1,6 @@
 PODS:
-  - CropViewController (2.5.2)
   - RSKImageCropper (2.2.3)
-  - SBCamera (0.2.5):
-    - CropViewController
+  - SBCamera (0.2.6):
     - RSKImageCropper (~> 2.2)
     - SwiftPermissionManager (~> 0.2)
   - SwiftPermissionManager (0.2.0)
@@ -12,7 +10,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - CropViewController
     - RSKImageCropper
     - SwiftPermissionManager
 
@@ -21,9 +18,8 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  CropViewController: 1aac40093c5739e60d992b04724a55d12a689a4c
   RSKImageCropper: a446db0e8444a036b34f3c43db01b2373baa4b2a
-  SBCamera: d95b815a9b1297a33af50e763193f745e8764f57
+  SBCamera: 880021a3b808275dace890513463b2425da4bda2
   SwiftPermissionManager: 5c5da12da9b965131e6f9decb8fb3dedb6254c88
 
 PODFILE CHECKSUM: abc48490412c57d475eb78ebebe2d7a459945ce4

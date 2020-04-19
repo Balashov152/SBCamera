@@ -210,6 +210,7 @@ open class SBCamera: NSObject {
         let cropper = RSKImageCropViewController(image: image, cropMode: cropMode)
         cropper.delegate = self
         cropper.avoidEmptySpaceAroundImage = !possibleEmptySpaceAroundCroppedImage
+        cropper.modalPresentationStyle = .fullScreen
         viewController?.present(cropper, animated: true, completion: nil)
     }
 }

@@ -26,10 +26,16 @@ class CameraViewController: UIViewController, SBCameraViewControllble {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        sbCamera.delegate = self
-        sbCamera.initCameraView()
+        sbCamera.cameraOutputQuality = .high
+        sbCamera.cameraPosition = .back
         sbCamera.cropImageToSizeCameraView = false
+        sbCamera.cropMode = .square
         sbCamera.possibleEmptySpaceAroundCroppedImage = true
+        sbCamera.shouldRespondToOrientationChanges = false
+        sbCamera.writeFilesToPhoneLibrary = false
+
+        sbCamera.initCameraView()
+        sbCamera.delegate = self
     }
 
     // MARK: Actions
