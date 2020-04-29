@@ -5,6 +5,8 @@
 //  Created by Sergey Balashov on 04/09/2019.
 //
 
+import SwiftPermissionManager
+
 extension SBCamera {
     open var cameraPosition: CameraDevice {
         get {
@@ -54,4 +56,13 @@ extension SBCamera {
         }
     }
     
+    static public var permissionManagerLocalizedForCameraAlert = PermissionManager.LocalizedAlert(title: "We don't have access to your camera",
+                                                                                         subtitle: "NSCameraUsageDescription",
+                                                                                         openSettings: "Open settings",
+                                                                                         cancel: "Cancel")
+    
+    static public var permissionManagerLocalizedForPhotoAlert = PermissionManager.LocalizedAlert(title: "We don't have access to your photo",
+                                                                                        subtitle: "NSPhotoLibraryUsageDescription",
+                                                                                        openSettings: "Open settings",
+                                                                                        cancel: "Cancel")
 }

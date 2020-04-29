@@ -74,7 +74,7 @@ open class SBCamera: NSObject {
             return
         }
         PermissionManager().checkPermission(type: .photoLibrary, createRequestIfNeed: true, denied: {
-            PermissionManager().openSettings(type: .photoLibrary)
+            PermissionManager().openSettings(type: .photoLibrary, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
         }) { [weak self] in
             DispatchQueue.main.async {
                 self?.openImagePicker()
@@ -88,7 +88,7 @@ open class SBCamera: NSObject {
             return
         }
         PermissionManager().checkPermission(type: .camera, createRequestIfNeed: true, denied: {
-            PermissionManager().openSettings(type: .camera)
+            PermissionManager().openSettings(type: .camera, localized: SBCamera.permissionManagerLocalizedForCameraAlert)
         }) { [weak self] in
             DispatchQueue.main.async {
                 UIApplication.shared.isIdleTimerDisabled = true
@@ -99,7 +99,7 @@ open class SBCamera: NSObject {
     
     open func capturePhoto() {
         PermissionManager().checkPermission(type: .camera, createRequestIfNeed: true, denied: {
-            PermissionManager().openSettings(type: .camera)
+            PermissionManager().openSettings(type: .camera, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
         }) { [weak self] in
             DispatchQueue.main.async {
                 self?.capturePicturePhoto()
@@ -140,7 +140,7 @@ open class SBCamera: NSObject {
     private func requestCamera() {
         switch cameraManager.currentCameraStatus() {
         case .accessDenied:
-            PermissionManager().openSettings(type: .camera)
+            PermissionManager().openSettings(type: .camera, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
             
         case .ready:
             addCameraToView()
