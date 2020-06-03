@@ -115,10 +115,10 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     open var cropImageToSizeCameraView = false
     
     /// Property for custom image album name.
-    open var imageAlbumName: String?
+    open var imageAlbumName: String? = "SBCamera"
     
     /// Property for custom image album name.
-    open var videoAlbumName: String?
+    open var videoAlbumName: String? = "SBCamera"
     
     /// Property for capture session to customize camera settings.
     open var captureSession: AVCaptureSession?
@@ -529,6 +529,31 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         }
     }
     
+    open func saveImageToPhotoLibrary(image: UIImage, imageCompletion: @escaping (CaptureResult) -> Void) {
+        let filePath = _tempFilePath()
+        let imageData = image.jpegData(compressionQuality: 1.0)!
+        let newImageData = _imageDataWithEXIF(forImage: image, imageData) as Data
+        
+        do {
+            try newImageData.write(to: filePath)
+            
+            // make sure that doesn't fail the first time
+            if PHPhotoLibrary.authorizationStatus() != .authorized {
+                PHPhotoLibrary.requestAuthorization { (status) in
+                    if status == PHAuthorizationStatus.authorized {
+                        self._saveImageToLibrary(image: image, imageCompletion)
+                    }
+                }
+            } else {
+                self._saveImageToLibrary(image: image, imageCompletion)
+            }
+            
+        } catch {
+            imageCompletion(.failure(error))
+            return
+        }
+    }
+    
     fileprivate func _capturePicture(_ imageData: Data, _ imageCompletion: @escaping (CaptureResult) -> Void) {
         guard let img = UIImage(data: imageData) else {
             imageCompletion(.failure(NSError()))
@@ -572,32 +597,10 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     
     fileprivate func _saveOrNotCapturePicture(image: UIImage, imageCompletion: @escaping (CaptureResult) -> Void) {
         if writeFilesToPhoneLibrary {
-            
-            let filePath = _tempFilePath()
-            let imageData = image.jpegData(compressionQuality: 1.0)!
-            let newImageData = _imageDataWithEXIF(forImage: image, imageData) as Data
-            
-            do {
-                
-                try newImageData.write(to: filePath)
-                
-                // make sure that doesn't fail the first time
-                if PHPhotoLibrary.authorizationStatus() != .authorized {
-                    PHPhotoLibrary.requestAuthorization { (status) in
-                        if status == PHAuthorizationStatus.authorized {
-                            self._saveImageToLibrary(atFileURL: filePath, imageCompletion)
-                        }
-                    }
-                } else {
-                    self._saveImageToLibrary(atFileURL: filePath, imageCompletion)
-                }
-                
-            } catch {
-                imageCompletion(.failure(error))
-                return
-            }
+            saveImageToPhotoLibrary(image: image, imageCompletion: imageCompletion)
+        } else {
+            imageCompletion(.success(content: .image(image)))
         }
-        imageCompletion(.success(content: .image(image)))
     }
     
     fileprivate func _setVideoWithGPS(forLocation location: CLLocation) {
@@ -658,13 +661,12 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         return GPSMetadata
     }
     
-    fileprivate func _saveImageToLibrary(atFileURL filePath: URL, _ imageCompletion: @escaping (CaptureResult) -> Void) {
+    fileprivate func _saveImageToLibrary(image: UIImage, _ imageCompletion: @escaping (CaptureResult) -> Void) {
         
         let location = self.locationManager?.latestLocation
         let date = Date()
         
-        library?.save(imageAtURL: filePath, albumName: self.imageAlbumName, date: date, location: location) { asset in
-            
+        library?.save(image: image, albumName: imageAlbumName, date: date, location: location) { asset in
             if let asset = asset {
                 imageCompletion(.success(content: .asset(asset)))
             } else {

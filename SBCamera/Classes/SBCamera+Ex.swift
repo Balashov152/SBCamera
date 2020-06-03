@@ -32,6 +32,9 @@ extension SBCamera {
         }
     }
     
+    /// save orifinal image to PhoneLibrary.
+    /// if isNeedOpenRSKImageCropperLibrary = true || isNeedOpenRSKImageCropperCamera = true will be save before showing cropper controller
+    /// if you want save cropped image to library and use PHAsset, you must set typeMedia to = .phAsset and cropped image will be save after crop
     open var writeFilesToPhoneLibrary: Bool {
         get {
             return cameraManager.writeFilesToPhoneLibrary

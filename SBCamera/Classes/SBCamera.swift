@@ -40,12 +40,26 @@ open class SBCamera: NSObject {
     open var isEnableVolumeButton = true
     
     open var cropMode: RSKImageCropMode = .square
+    
+    /// open cropper screen after capture select photo from library
+    /// if you want set typeMedia to phAsset, that cropped image will be save on photo library
     open var isNeedOpenRSKImageCropperLibrary = true
+    
+    /// open cropper screen after capture camera photo
+    /// if you want set typeMedia to phAsset, that cropped image will be save on photo library
     open var isNeedOpenRSKImageCropperCamera = true
+
     open var possibleEmptySpaceAroundCroppedImage = false
     
-    lazy var cameraManager = CameraManager()
-    private lazy var imagePickerController = UIImagePickerController()
+    public lazy var imageManager = PHCachingImageManager.default()
+    public lazy var photoOptions: PHImageRequestOptions = {
+        let options = PHImageRequestOptions()
+        options.isNetworkAccessAllowed = true
+        return options
+    }()
+    
+    public lazy var cameraManager = CameraManager()
+    public var imagePickerController: UIViewController?
     
     public init(controller: ViewController, typeMedia: TypeMedia) {
         self.viewController = controller
@@ -159,16 +173,25 @@ open class SBCamera: NSObject {
     }
     
     private func openImagePicker() {
-        imagePickerController.sourceType = .photoLibrary
-        imagePickerController.delegate = self
-        
-        var mediaTypes = [String]()
-        switch typeMedia {
-        case .uiImage, .phAssetImage:
-            mediaTypes = [kUTTypeImage as String]
+        if imagePickerController == nil { // if need use standart UIImagePickerController
+           let uiImagePickerController = UIImagePickerController()
+            uiImagePickerController.sourceType = .photoLibrary
+            uiImagePickerController.delegate = self
+            var mediaTypes = [String]()
+            switch typeMedia {
+            case .uiImage, .phAssetImage:
+                mediaTypes = [kUTTypeImage as String]
+            }
+            
+            uiImagePickerController.mediaTypes = mediaTypes
+            self.imagePickerController = uiImagePickerController
         }
         
-        imagePickerController.mediaTypes = mediaTypes
+        guard let imagePickerController = imagePickerController else {
+            assertionFailure("unreal case")
+            return
+        }
+        
         viewController?.present(imagePickerController, animated: true)
     }
     
@@ -179,14 +202,15 @@ open class SBCamera: NSObject {
         switch typeMedia {
         case .phAssetImage:
             if mediaType == (kUTTypeImage as String) {
+                
                 if #available(iOS 11.0, *) {
                     if let asset = info[.phAsset] as? PHAsset {
-                        delegate?.sbCamera(self, didCreatePHAsset: asset)
+                        didGetAssetFromPhotoLibrary(asset: asset)
                     }
                 } else {
                     if let url = info[.referenceURL] as? URL {
                         if let asset = PHAsset.fetchAssets(withALAssetURLs: [url], options: nil).firstObject {
-                            delegate?.sbCamera(self, didCreatePHAsset: asset)
+                            didGetAssetFromPhotoLibrary(asset: asset)
                         }
                     }
                 }
@@ -195,14 +219,28 @@ open class SBCamera: NSObject {
         case .uiImage:
             if mediaType == (kUTTypeImage as String) {
                 if let image = info[.originalImage] as? UIImage {
-                    if isNeedOpenRSKImageCropperLibrary {
-                        cropImage(image: image)
-                    } else {
-                        delegate?.sbCamera(self, didCreateUIImage: image)
-                    }
+                    didGetImageFromPhotoLibrary(image: image)
                 }
             }
             
+        }
+    }
+    
+    private func didGetAssetFromPhotoLibrary(asset: PHAsset) {
+        if isNeedOpenRSKImageCropperLibrary {
+            requestImage(for: asset) { [weak self] (image) in
+                self?.cropImage(image: image)
+            }
+        } else {
+            delegate?.sbCamera(self, didCreatePHAsset: asset)
+        }
+    }
+    
+    private func didGetImageFromPhotoLibrary(image: UIImage) {
+        if isNeedOpenRSKImageCropperLibrary {
+            cropImage(image: image)
+        } else {
+            delegate?.sbCamera(self, didCreateUIImage: image)
         }
     }
     
@@ -213,6 +251,45 @@ open class SBCamera: NSObject {
         cropper.modalPresentationStyle = .fullScreen
         viewController?.present(cropper, animated: true, completion: nil)
     }
+    
+    private func didCropImage(image: UIImage) {
+        switch typeMedia {
+        case .phAssetImage:
+            cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
+                guard let self = self else {
+                   assertionFailure("weak self is nil")
+                    return
+                }
+                
+                switch result {
+                    
+                case .success(content: let content):
+                    switch content {
+                    case let .asset(asset):
+                        self.delegate?.sbCamera(self, didCreatePHAsset: asset)
+                    case let .image(image):
+                        assertionFailure("not call this conent for typeMedia == .phAssetImage")
+                        self.delegate?.sbCamera(self, didCreateUIImage: image)
+                    case .imageData:
+                        assertionFailure("not implement case")
+                    }
+                case let .failure(error):
+                    self.delegate?.sbCamera(self, catchError: error)
+                }
+            }
+        case .uiImage:
+            delegate?.sbCamera(self, didCreateUIImage: image)
+        }
+    }
+    
+    
+    func requestImage(for asset: PHAsset, completion: @escaping (UIImage) -> Void) -> PHImageRequestID {
+        let targetSize = CGSize(width: asset.pixelWidth, height: asset.pixelHeight)
+        return imageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFill, options: photoOptions) { image, info in
+            guard let isDegraded = info?[PHImageResultIsDegradedKey] as? Bool, !isDegraded, let image = image else { return }
+            completion(image)
+        }
+    }
 }
 
 extension SBCamera: RSKImageCropViewControllerDelegate {
@@ -222,9 +299,7 @@ extension SBCamera: RSKImageCropViewControllerDelegate {
     
     public func imageCropViewController(_ controller: RSKImageCropViewController, didCropImage croppedImage: UIImage, usingCropRect cropRect: CGRect, rotationAngle: CGFloat) {
         controller.dismiss(animated: true, completion: { [weak self] in
-            if let self = self {
-                self.delegate?.sbCamera(self, didCreateUIImage: croppedImage)
-            }
+            self?.didCropImage(image: croppedImage)
         })
     }
 }

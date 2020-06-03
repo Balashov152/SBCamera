@@ -20,7 +20,7 @@ class CameraViewController: UIViewController, SBCameraViewControllble {
     @IBOutlet var galeryButton: UIButton!
     @IBOutlet var switchCamera: UIButton!
 
-    private lazy var sbCamera = SBCamera(controller: self, typeMedia: .uiImage)
+    private lazy var sbCamera = SBCamera(controller: self, typeMedia: .phAssetImage)
     
     public var didCreatePhoto: (UIImage) -> () = { _ in }
 
@@ -32,7 +32,12 @@ class CameraViewController: UIViewController, SBCameraViewControllble {
         sbCamera.cropMode = .square
         sbCamera.possibleEmptySpaceAroundCroppedImage = true
         sbCamera.shouldRespondToOrientationChanges = false
+        
         sbCamera.writeFilesToPhoneLibrary = false
+        
+        sbCamera.isNeedOpenRSKImageCropperCamera = true
+        sbCamera.isNeedOpenRSKImageCropperLibrary = true
+        sbCamera.cameraManager.imageAlbumName = "SBCamera-Example"
 
         sbCamera.initCameraView()
         sbCamera.delegate = self
@@ -59,7 +64,7 @@ class CameraViewController: UIViewController, SBCameraViewControllble {
 
 extension CameraViewController: SBCameraDelegate {
     func sbCamera(_ camera: SBCamera, didCreatePHAsset asset: PHAsset) {
-        
+        print("didCreatePHAsset", asset)
     }
     
     func sbCamera(_ camera: SBCamera, catchError error: Error) {
