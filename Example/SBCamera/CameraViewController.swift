@@ -65,6 +65,10 @@ class CameraViewController: UIViewController, SBCameraViewControllble {
 extension CameraViewController: SBCameraDelegate {
     func sbCamera(_ camera: SBCamera, didCreatePHAsset asset: PHAsset) {
         print("didCreatePHAsset", asset)
+        PHImageManager().requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: .aspectFill, options: nil) { [weak self] image, info in
+        guard let isDegraded = info?[PHImageResultIsDegradedKey] as? Bool, !isDegraded, let image = image else { return }
+            self?.didCreatePhoto(image)
+        }
     }
     
     func sbCamera(_ camera: SBCamera, catchError error: Error) {

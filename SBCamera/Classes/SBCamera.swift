@@ -255,7 +255,13 @@ open class SBCamera: NSObject {
     private func didCropImage(image: UIImage) {
         switch typeMedia {
         case .phAssetImage:
+            DispatchQueue.main.async {
+                UIApplication.shared.beginIgnoringInteractionEvents()
+            }
             cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
+                DispatchQueue.main.async {
+                    UIApplication.shared.endIgnoringInteractionEvents()
+                }
                 guard let self = self else {
                    assertionFailure("weak self is nil")
                     return
@@ -298,9 +304,8 @@ extension SBCamera: RSKImageCropViewControllerDelegate {
     }
     
     public func imageCropViewController(_ controller: RSKImageCropViewController, didCropImage croppedImage: UIImage, usingCropRect cropRect: CGRect, rotationAngle: CGFloat) {
-        controller.dismiss(animated: true, completion: { [weak self] in
-            self?.didCropImage(image: croppedImage)
-        })
+        didCropImage(image: croppedImage)
+        controller.dismiss(animated: true, completion: { [weak self] in })
     }
 }
 

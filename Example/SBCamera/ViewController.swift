@@ -19,8 +19,9 @@ class ViewController: UIViewController {
     @IBAction func openCamera(_ sender: UIButton) {
         let vc = CameraViewController(nibName: "CameraViewController", bundle: nil)
         vc.modalPresentationStyle = .fullScreen
-        vc.didCreatePhoto = { [weak imageView] image in
+        vc.didCreatePhoto = { [weak imageView, weak vc] image in
             imageView?.image = image
+            vc?.dismiss(animated: true, completion: nil)
         }
         present(vc, animated: true, completion: nil)
     }
