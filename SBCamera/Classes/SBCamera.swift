@@ -256,7 +256,7 @@ open class SBCamera: NSObject {
         switch typeMedia {
         case .phAssetImage:
             PermissionManager().checkPermission(type: .photoLibrary, createRequestIfNeed: true, denied: { [weak self] in
-                assertionFailure("permission photo library is denied")
+                print("permission photo library is denied")
                 guard let self = self else { return }
                 self.delegate?.sbCamera(self, didCreateUIImage: image)
             }) { [weak self] in
