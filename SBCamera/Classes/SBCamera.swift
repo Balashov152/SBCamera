@@ -255,34 +255,41 @@ open class SBCamera: NSObject {
     private func didCropImage(image: UIImage) {
         switch typeMedia {
         case .phAssetImage:
-            DispatchQueue.main.async {
-                UIApplication.shared.beginIgnoringInteractionEvents()
-            }
-            cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
+            PermissionManager().checkPermission(type: .photoLibrary, createRequestIfNeed: true, denied: { [weak self] in
+                assertionFailure("permission photo library is denied")
+                guard let self = self else { return }
+                self.delegate?.sbCamera(self, didCreateUIImage: image)
+            }) { [weak self] in
                 DispatchQueue.main.async {
-                    UIApplication.shared.endIgnoringInteractionEvents()
+                    UIApplication.shared.beginIgnoringInteractionEvents()
                 }
-                guard let self = self else {
-                   assertionFailure("weak self is nil")
-                    return
-                }
-                
-                switch result {
-                    
-                case .success(content: let content):
-                    switch content {
-                    case let .asset(asset):
-                        self.delegate?.sbCamera(self, didCreatePHAsset: asset)
-                    case let .image(image):
-                        assertionFailure("not call this conent for typeMedia == .phAssetImage")
-                        self.delegate?.sbCamera(self, didCreateUIImage: image)
-                    case .imageData:
-                        assertionFailure("not implement case")
+                self?.cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
+                    DispatchQueue.main.async {
+                        UIApplication.shared.endIgnoringInteractionEvents()
                     }
-                case let .failure(error):
-                    self.delegate?.sbCamera(self, catchError: error)
+                    guard let self = self else {
+                        assertionFailure("weak self is nil")
+                        return
+                    }
+                    
+                    switch result {
+                        
+                    case .success(content: let content):
+                        switch content {
+                        case let .asset(asset):
+                            self.delegate?.sbCamera(self, didCreatePHAsset: asset)
+                        case let .image(image):
+                            assertionFailure("not call this conent for typeMedia == .phAssetImage")
+                            self.delegate?.sbCamera(self, didCreateUIImage: image)
+                        case .imageData:
+                            assertionFailure("not implement case")
+                        }
+                    case let .failure(error):
+                        self.delegate?.sbCamera(self, catchError: error)
+                    }
                 }
             }
+            
         case .uiImage:
             delegate?.sbCamera(self, didCreateUIImage: image)
         }
