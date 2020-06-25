@@ -530,27 +530,18 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     }
     
     open func saveImageToPhotoLibrary(image: UIImage, imageCompletion: @escaping (CaptureResult) -> Void) {
-        let filePath = _tempFilePath()
-        let imageData = image.jpegData(compressionQuality: 1.0)!
+        guard let imageData = image.jpegData(compressionQuality: 1.0) else { return }
         let newImageData = _imageDataWithEXIF(forImage: image, imageData) as Data
         
-        do {
-            try newImageData.write(to: filePath)
-            
-            // make sure that doesn't fail the first time
-            if PHPhotoLibrary.authorizationStatus() != .authorized {
-                PHPhotoLibrary.requestAuthorization { (status) in
-                    if status == PHAuthorizationStatus.authorized {
-                        self._saveImageToLibrary(image: image, imageCompletion)
-                    }
+        // make sure that doesn't fail the first time
+        if PHPhotoLibrary.authorizationStatus() != .authorized {
+            PHPhotoLibrary.requestAuthorization { (status) in
+                if status == PHAuthorizationStatus.authorized {
+                    self._saveImageToLibrary(image: image, imageCompletion)
                 }
-            } else {
-                self._saveImageToLibrary(image: image, imageCompletion)
             }
-            
-        } catch {
-            imageCompletion(.failure(error))
-            return
+        } else {
+            self._saveImageToLibrary(image: image, imageCompletion)
         }
     }
     
