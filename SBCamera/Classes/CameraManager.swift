@@ -657,6 +657,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         let location = self.locationManager?.latestLocation
         let date = Date()
         
+        _setupPhotoLibraryOutputs()
         library?.save(image: image, albumName: imageAlbumName, date: date, location: location) { asset in
             if let asset = asset {
                 imageCompletion(.success(content: .asset(asset)))
@@ -878,10 +879,10 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     }
     
     fileprivate func _saveVideoToLibrary(_ fileURL: URL) {
-        
         let location = self.locationManager?.latestLocation
         let date = Date()
         
+        _setupPhotoLibraryOutputs()
         library?.save(videoAtURL: fileURL, albumName: self.videoAlbumName, date: date, location: location, completion: { _ in
             self._executeVideoCompletionWithURL(fileURL, error: nil)
         })
@@ -1576,6 +1577,10 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             movieOutput = AVCaptureMovieFileOutput()
             movieOutput?.movieFragmentInterval = CMTime.invalid
         }
+        _setupPhotoLibraryOutputs()
+    }
+    
+    fileprivate func _setupPhotoLibraryOutputs() {
         if library == nil {
             library = PHPhotoLibrary.shared()
         }
