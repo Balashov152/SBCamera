@@ -21,7 +21,7 @@ public extension PHPhotoLibrary {
     
     // finds or creates an album
     
-    func getAlbum(name: String, completion: @escaping (PHAssetCollection) -> ()) {
+    func getAlbum(name: String, completion: @escaping (PHAssetCollection?) -> ()) {
         if let album = self.findAlbum(name: name) {
             completion(album)
         } else {
@@ -33,6 +33,10 @@ public extension PHPhotoLibrary {
         func save() {
             if let albumName = albumName {
                 self.getAlbum(name: albumName) { album in
+                    guard let album = album else {
+                        completion?(nil)
+                        return
+                    }
                     self.saveImage(image: image, album: album, date: date, location: location, completion: completion)
                 }
             }
@@ -87,15 +91,18 @@ public extension PHPhotoLibrary {
         return photoAlbum
     }
     
-    fileprivate func createAlbum(name: String, completion: @escaping (PHAssetCollection) -> ()) {
+    fileprivate func createAlbum(name: String, completion: @escaping (PHAssetCollection?) -> ()) {
         var placeholder: PHObjectPlaceholder?
         
         self.performChanges({
             let createAlbumRequest = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: name)
             placeholder = createAlbumRequest.placeholderForCreatedAssetCollection
         }, completionHandler: { success, error in
-            let fetchResult = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [placeholder!.localIdentifier], options: nil)
-            completion(fetchResult.firstObject!)
+            if let placeholder = placeholder {
+                let fetchResult = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [placeholder.localIdentifier], options: nil)
+                completion(fetchResult.firstObject)
+            }
+            completion(nil)
         })
     }
 
