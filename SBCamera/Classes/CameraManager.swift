@@ -533,6 +533,18 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         guard let imageData = image.jpegData(compressionQuality: 1.0) else { return }
         let newImageData = _imageDataWithEXIF(forImage: image, imageData) as Data
         
+        if #available(iOS 14, *) {
+            if PHPhotoLibrary.authorizationStatus(for: .readWrite) == PHAuthorizationStatus.authorized {
+                self._saveImageToLibrary(image: image, imageCompletion)
+            } else {
+                PHPhotoLibrary.requestAuthorization(for: .readWrite) { (status) in
+                    if status == .authorized {
+                        self._saveImageToLibrary(image: image, imageCompletion)
+                    }
+                }
+            }
+        } else {
+        
         // make sure that doesn't fail the first time
         if PHPhotoLibrary.authorizationStatus() != .authorized {
             PHPhotoLibrary.requestAuthorization { (status) in
@@ -542,6 +554,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             }
         } else {
             self._saveImageToLibrary(image: image, imageCompletion)
+        }
         }
     }
     

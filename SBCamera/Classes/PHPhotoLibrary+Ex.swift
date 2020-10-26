@@ -42,16 +42,26 @@ public extension PHPhotoLibrary {
             }
         }
         
-        if PHPhotoLibrary.authorizationStatus() == .authorized {
-            save()
-        } else {
-            PHPhotoLibrary.requestAuthorization({ (status) in
-                if status == .authorized {
-                    save()
-                } else {
-                    completion?(nil)
+        if #available(iOS 14, *) {
+            if PHPhotoLibrary.authorizationStatus(for: .readWrite) == PHAuthorizationStatus.authorized {
+                save()
+            } else {
+                PHPhotoLibrary.requestAuthorization(for: .readWrite) { (status) in
+                    if status == .authorized {
+                        save()
+                    }
                 }
-            })
+            }
+        } else {
+            if PHPhotoLibrary.authorizationStatus() == .authorized {
+                save()
+            } else {
+                PHPhotoLibrary.requestAuthorization({ (status) in
+                    if status == .authorized {
+                        save()
+                    }
+                })
+            }
         }
     }
     
