@@ -37,7 +37,7 @@ class CameraViewController: UIViewController, SBCameraViewControllble {
         
         sbCamera.isNeedOpenRSKImageCropperCamera = true
         sbCamera.isNeedOpenRSKImageCropperLibrary = true
-        sbCamera.cameraManager.imageAlbumName = "SBCamera-Example"
+        sbCamera.cameraManager.albumName = "SBCamera-Example"
 
         sbCamera.initCameraView()
         sbCamera.delegate = self

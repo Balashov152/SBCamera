@@ -87,13 +87,32 @@ open class SBCamera: NSObject {
             assertionFailure("Need fill key NSPhotoLibraryUsageDescription in Info.plist")
             return
         }
-        PermissionManager().checkPermission(type: .photoLibrary, createRequestIfNeed: true, denied: {
-            PermissionManager().openSettings(type: .photoLibrary, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
-        }) { [weak self] in
-            DispatchQueue.main.async {
-                self?.openImagePicker()
+        
+        PermissionManager().checkPhotoLibraryPermission(request: .readWrite, result: { [weak self] (result) in
+            switch result {
+            case .success:
+                DispatchQueue.main.async {
+                    self?.openImagePicker()
+                }
+            case let .failure(error):
+                debugPrint("checkPhotoLibraryPermission error - \(error.localizedDescription)")
+                PermissionManager().openSettings(type: .photoLibrary, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
             }
-        }
+        })
+    }
+    
+    private func checkCameraPermission(access: @escaping () -> ()) {
+        PermissionManager().checkCameraPermission(request: true, result: { [weak self] (result) in
+            switch result {
+            case .success:
+                DispatchQueue.main.async {
+                    access()
+                }
+            case let .failure(error):
+                debugPrint("checkCameraPermission error - \(error.localizedDescription)")
+                PermissionManager().openSettings(type: .camera, localized: SBCamera.permissionManagerLocalizedForCameraAlert)
+            }
+        })
     }
     
     open func initCameraView() {
@@ -101,23 +120,21 @@ open class SBCamera: NSObject {
             assertionFailure("Need fill key NSCameraUsageDescription in Info.plist")
             return
         }
-        PermissionManager().checkPermission(type: .camera, createRequestIfNeed: true, denied: {
-            PermissionManager().openSettings(type: .camera, localized: SBCamera.permissionManagerLocalizedForCameraAlert)
-        }) { [weak self] in
-            DispatchQueue.main.async {
-                UIApplication.shared.isIdleTimerDisabled = true
-                self?.requestCamera()
-            }
+        checkCameraPermission { [weak self] in
+            UIApplication.shared.isIdleTimerDisabled = true
+            self?.requestCamera()
         }
     }
     
     open func capturePhoto() {
-        PermissionManager().checkPermission(type: .camera, createRequestIfNeed: true, denied: {
-            PermissionManager().openSettings(type: .camera, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
-        }) { [weak self] in
-            DispatchQueue.main.async {
-                self?.capturePicturePhoto()
-            }
+        guard Bundle.main.object(forInfoDictionaryKey: "NSCameraUsageDescription") != nil else {
+            assertionFailure("Need fill key NSCameraUsageDescription in Info.plist")
+            return
+        }
+        
+        checkCameraPermission { [weak self] in
+            UIApplication.shared.isIdleTimerDisabled = true
+            self?.capturePicturePhoto()
         }
     }
     
@@ -255,35 +272,37 @@ open class SBCamera: NSObject {
     private func didCropImage(image: UIImage) {
         switch typeMedia {
         case .phAssetImage:
-            PermissionManager().checkPermission(type: .photoLibrary, createRequestIfNeed: true, denied: { [weak self] in
-                print("permission photo library is denied")
-                guard let self = self else { return }
-                self.delegate?.sbCamera(self, didCreateUIImage: image)
-            }) { [weak self] in
-                self?.cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
-                    guard let self = self else {
-                        assertionFailure("weak self is nil")
-                        return
-                    }
-                    
-                    switch result {
-                        
-                    case let .success(content):
-                        switch content {
-                        case let .asset(asset):
-                            self.delegate?.sbCamera(self, didCreatePHAsset: asset)
-                        case let .image(image):
-                            assertionFailure("not call this conent for typeMedia == .phAssetImage")
-                            self.delegate?.sbCamera(self, didCreateUIImage: image)
-                        case .imageData:
-                            assertionFailure("not implement case")
+            PermissionManager().checkPhotoLibraryPermission(request: .readWrite, result: { [weak self] (result) in
+                switch result {
+                case .success:
+                    self?.cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
+                        guard let self = self else {
+                            assertionFailure("weak self is nil")
+                            return
                         }
-                    case let .failure(error):
-                        self.delegate?.sbCamera(self, catchError: error)
+                        
+                        switch result {
+                        case let .success(content):
+                            switch content {
+                            case let .asset(asset):
+                                self.delegate?.sbCamera(self, didCreatePHAsset: asset)
+                            case let .image(image):
+                                assertionFailure("not call this conent for typeMedia == .phAssetImage")
+                                self.delegate?.sbCamera(self, didCreateUIImage: image)
+                            case .imageData:
+                                assertionFailure("not implement case")
+                            }
+                        case let .failure(error):
+                            self.delegate?.sbCamera(self, catchError: error)
+                        }
                     }
+                case let .failure(error):
+                    print("permission photo library is denied")
+                    guard let self = self else { return }
+                    self.delegate?.sbCamera(self, didCreateUIImage: image)
                 }
-            }
-            
+            })
+
         case .uiImage:
             delegate?.sbCamera(self, didCreateUIImage: image)
         }

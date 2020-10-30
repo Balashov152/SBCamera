@@ -15,6 +15,7 @@ import MobileCoreServices
 import CoreLocation
 import CoreMotion
 import CoreImage
+import SwiftPermissionManager
 
 public enum CameraState {
     case ready, accessDenied, noDeviceFound, notDetermined
@@ -59,7 +60,6 @@ public enum CaptureContent {
 extension CaptureContent {
     
     public var asImage: UIImage? {
-        
         switch self {
         case let .image(image): return image
         case let .imageData(data): return UIImage(data: data)
@@ -73,17 +73,14 @@ extension CaptureContent {
     }
     
     public var asData: Data? {
-        
         switch self {
         case let .image(image): return image.jpegData(compressionQuality: 0.8)
         case let .imageData(data): return data
         case let .asset(asset): return getImageData(fromAsset: asset)
         }
-        
     }
     
     private func getImageData(fromAsset asset: PHAsset) -> Data? {
-        
         var imageData: Data? = nil
         let manager = PHImageManager.default()
         let options = PHImageRequestOptions()
@@ -98,7 +95,6 @@ extension CaptureContent {
 }
 
 public enum CaptureError: Error {
-    
     case noImageData
     case invalidImageData
     case noVideoConnection
@@ -115,10 +111,12 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     open var cropImageToSizeCameraView = false
     
     /// Property for custom image album name.
-    open var imageAlbumName: String? = "SBCamera"
+    open var albumName: String? = "SBCamera"
     
     /// Property for custom image album name.
-    open var videoAlbumName: String? = "SBCamera"
+    open var imageAlbumName: String? { albumName }
+    /// Property for custom image album name.
+    open var videoAlbumName: String? { albumName }
     
     /// Property for capture session to customize camera settings.
     open var captureSession: AVCaptureSession?
@@ -131,17 +129,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     
     /// Property to determine if the manager should show the camera permission popup immediatly when it's needed or you want to show it manually. Default value is true. Be carful cause using the camera requires permission, if you set this value to false and don't ask manually you won't be able to use the camera.
     open var showAccessPermissionPopupAutomatically = true
-    
-    /// A block creating UI to present error message to the user. This can be customised to be presented on the Window root view controller, or to pass in the viewController which will present the UIAlertController, for example.
-    open var showErrorBlock:(_ erTitle: String, _ erMessage: String) -> Void = { (erTitle: String, erMessage: String) -> Void in
-        
-        var alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: { (alertAction) -> Void in  }))
-        
-        if let topController = UIApplication.shared.keyWindow?.rootViewController {
-            topController.present(alertController, animated: true, completion:nil)
-        }
-    }
     
     /**
      Property to determine if manager should write the resources to the phone library.
@@ -530,27 +517,13 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     }
     
     open func saveImageToPhotoLibrary(image: UIImage, imageCompletion: @escaping (CaptureResult) -> Void) {
-        guard let imageData = image.jpegData(compressionQuality: 1.0) else { return }
-        let newImageData = _imageDataWithEXIF(forImage: image, imageData) as Data
-        
-        if #available(iOS 14, *) {
-            if PHPhotoLibrary.authorizationStatus(for: .readWrite) == PHAuthorizationStatus.authorized {
-                self._saveImageToLibrary(image: image, imageCompletion)
-            } else {
-                imageCompletion(.failure(CaptureError.assetNotSaved))
-            }
-        } else {
-            // make sure that doesn't fail the first time
-            if PHPhotoLibrary.authorizationStatus() != .authorized {
-                PHPhotoLibrary.requestAuthorization { (status) in
-                    if status == PHAuthorizationStatus.authorized {
-                        self._saveImageToLibrary(image: image, imageCompletion)
-                    }
-                }
-            } else {
-                self._saveImageToLibrary(image: image, imageCompletion)
-            }
+        guard let imageData = image.jpegData(compressionQuality: 1.0) else {
+            imageCompletion(.failure(SBCameraSavedError.notCreateImageData))
+            return
         }
+        
+        let newImageData = _imageDataWithEXIF(forImage: image, imageData) as Data
+        self._saveImageToLibrary(image: image, imageCompletion)
     }
     
     fileprivate func _capturePicture(_ imageData: Data, _ imageCompletion: @escaping (CaptureResult) -> Void) {
@@ -665,13 +638,15 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         let date = Date()
         
         _setupPhotoLibraryOutputs()
-        library?.save(image: image, albumName: imageAlbumName, date: date, location: location) { asset in
-            if let asset = asset {
+        library?.save(item: .image(image: image), albumName: albumName, date: Date(), location: location, completion: { (result) in
+            switch result {
+            case let .success(asset):
                 imageCompletion(.success(content: .asset(asset)))
-            } else {
+            
+            case let .failure(error):
                 imageCompletion(.failure(CaptureError.assetNotSaved))
             }
-        }
+        })
     }
     
     /**
@@ -870,30 +845,26 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             _show(NSLocalizedString("Unable to save video to the device", comment:""), message: error.localizedDescription)
         } else {
             if writeFilesToPhoneLibrary {
-                if PHPhotoLibrary.authorizationStatus() == .authorized {
-                    _saveVideoToLibrary(outputFileURL)
-                } else {
-                    PHPhotoLibrary.requestAuthorization({ (autorizationStatus) in
-                        if autorizationStatus == .authorized {
-                            self._saveVideoToLibrary(outputFileURL)
-                        }
-                    })
-                }
+                _saveVideoToLibrary(url: outputFileURL)
             } else {
                 _executeVideoCompletionWithURL(outputFileURL, error: error as NSError?)
             }
         }
     }
     
-    fileprivate func _saveVideoToLibrary(_ fileURL: URL) {
+    fileprivate func _saveVideoToLibrary(url: URL) {
         let location = self.locationManager?.latestLocation
         let date = Date()
         
         _setupPhotoLibraryOutputs()
-        library?.save(videoAtURL: fileURL, albumName: self.videoAlbumName, date: date, location: location, completion: { _ in
-            self._executeVideoCompletionWithURL(fileURL, error: nil)
+        library?.save(item: .video(url: url), albumName: albumName, date: Date(), location: location, completion: { [weak self] (result) in
+            switch result {
+            case let .success(asset):
+                self?._executeVideoCompletionWithURL(url, error: nil)
+            case let .failure(error):
+                self?._show("Video not saved", message: error.localizedDescription)
+            }
         })
-        
     }
     
     // MARK: - UIGestureRecognizerDelegate
@@ -1892,14 +1863,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 captureSession?.removeInput(deviceInput)
                 break
             }
-        }
-    }
-    
-    fileprivate func _show(_ title: String, message: String) {
-        if showErrorsToUsers {
-            DispatchQueue.main.async(execute: {
-                self.showErrorBlock(title, message)
-            })
         }
     }
     

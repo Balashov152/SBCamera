@@ -14,141 +14,142 @@ import MobileCoreServices
 import CoreLocation
 import CoreMotion
 import CoreImage
+import SwiftPermissionManager
+
+public enum SBCameraSavedError: Error {
+    case notFoundAlbum, notCreateAlbum(error: Error?)
+    case notCreateRequestForAsset, notCreateRequestForChanges
+    
+    case notSavedError(error: Error?), notFoundAsset
+    case notPermission
+    
+    case notCreateImageData
+}
 
 public extension PHPhotoLibrary {
+    typealias PHAssetCompletion = (Result<PHAsset, SBCameraSavedError>) -> ()
+    typealias PHAssetCollectionCompletion = (Result<PHAssetCollection, SBCameraSavedError>) -> ()
+    
+    public enum SaveItem {
+        case image(image: UIImage)
+        case imageUrl(url: URL)
+        case video(url: URL)
+    }
     
     // MARK: - Public
-    
-    // finds or creates an album
-    
-    func getAlbum(name: String, completion: @escaping (PHAssetCollection?) -> ()) {
-        if let album = self.findAlbum(name: name) {
-            completion(album)
-        } else {
-            createAlbum(name: name, completion: completion)
-        }
-    }
-    
-    func save(image: UIImage, albumName: String?, date: Date = Date(), location: CLLocation? = nil, completion:((PHAsset?) -> ())? = nil) {
-        guard let albumName = albumName else {
-            completion?(nil)
-            return
-        }
-        
-        self.getAlbum(name: albumName) { album in
-            guard let album = album else {
-                completion?(nil)
-                return
-            }
-            self.saveImage(image: image, album: album, date: date, location: location, completion: completion)
-        }
-    }
-    
-    func save(videoAtURL: URL, albumName: String?, date: Date = Date(), location: CLLocation? = nil, completion:((PHAsset?) -> ())? = nil) {
-        func save() {
-            if let albumName = albumName {
-                self.getAlbum(name: albumName) { album in
-                    self.saveVideo(videoAtURL: videoAtURL, album: album, date: date, location: location, completion: completion)
+    // if albumName == nil, wiil be get first album from library
+    public func save(item: SaveItem, albumName: String?, date: Date = Date(), location: CLLocation? = nil, completion: @escaping PHAssetCompletion) {
+        PermissionManager().checkPhotoLibraryPermission(request: .readWrite) { [weak self] (result) in
+            switch result {
+            case .success:
+                self?.getAlbum(name: albumName) { [weak self] album in
+                    switch album {
+                    case let .success(album):
+                        self?.save(item: item, album: album, date: date, location: location, completion: completion)
+                    case let .failure(error):
+                        completion(.failure(.notSavedError(error: error)))
+                    }
                 }
-            } else {
-                self.saveVideo(videoAtURL: videoAtURL, album: nil, date: date, location: location, completion: completion)
+            case let.failure(error):
+                completion(.failure(.notPermission))
             }
-            
-        }
-        
-        if PHPhotoLibrary.authorizationStatus() == .authorized {
-            save()
-        } else {
-            PHPhotoLibrary.requestAuthorization({ (status) in
-                if status == .authorized {
-                    save()
-                }
-            })
         }
     }
     
-
     // MARK: - Private
     
-    fileprivate func findAlbum(name: String) -> PHAssetCollection? {
+    /// finds or creates an album
+    private func getAlbum(name: String?, completion: @escaping PHAssetCollectionCompletion) {
+        if let album = findAlbum(name: name) {
+            completion(.success(album))
+        } else if let name = name {
+            createAlbum(name: name, completion: completion)
+        } else {
+            completion(.failure(.notFoundAlbum))
+        }
+    }
+    
+    fileprivate func findAlbum(name: String?) -> PHAssetCollection? {
         let fetchOptions = PHFetchOptions()
-        fetchOptions.predicate = NSPredicate(format: "title = %@", name)
-        let fetchResult : PHFetchResult = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: fetchOptions)
-        guard let photoAlbum = fetchResult.firstObject else {
+        if let name = name {
+            fetchOptions.predicate = NSPredicate(format: "title = %@", name)
+        }
+        
+        guard let album = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: fetchOptions).firstObject else {
             return nil
         }
-        return photoAlbum
+
+        return album
     }
     
-    fileprivate func createAlbum(name: String, completion: @escaping (PHAssetCollection?) -> ()) {
+    fileprivate func createAlbum(name: String, completion: @escaping PHAssetCollectionCompletion) {
         var placeholder: PHObjectPlaceholder?
         
-        self.performChanges({
-            let createAlbumRequest = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: name)
-            placeholder = createAlbumRequest.placeholderForCreatedAssetCollection
-        }, completionHandler: { success, error in
-            if let placeholder = placeholder {
-                let fetchResult = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [placeholder.localIdentifier], options: nil)
-                completion(fetchResult.firstObject)
-            }
-            completion(nil)
-        })
-    }
-
-    fileprivate func saveVideo(videoAtURL: URL, album: PHAssetCollection?, date: Date = Date(), location: CLLocation? = nil, completion:((PHAsset?) -> ())? = nil) {
-        var placeholder: PHObjectPlaceholder?
-        self.performChanges({
-            let createAssetRequest = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoAtURL)!
-            createAssetRequest.creationDate = date
-            createAssetRequest.location = location
-            if let album = album {
-                guard let albumChangeRequest = PHAssetCollectionChangeRequest(for: album),
-                    let photoPlaceholder = createAssetRequest.placeholderForCreatedAsset else { return }
-                placeholder = photoPlaceholder
-                let fastEnumeration = NSArray(array: [photoPlaceholder] as [PHObjectPlaceholder])
-                albumChangeRequest.addAssets(fastEnumeration)
-                
+        performChanges {
+            let request = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: name)
+            placeholder = request.placeholderForCreatedAssetCollection
+            
+        } completionHandler: { (success, error) in
+            guard success, error == nil else {
+                completion(.failure(.notCreateAlbum(error: error)))
+                return
             }
             
-        }, completionHandler: { success, error in
-            guard let placeholder = placeholder else {
-                completion?(nil)
+            guard let placeholder = placeholder,
+                  let collection = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [placeholder.localIdentifier], options: nil).firstObject else {
+                completion(.failure(.notFoundAlbum))
                 return
             }
-            if success {
-                let assets:PHFetchResult<PHAsset> =  PHAsset.fetchAssets(withLocalIdentifiers: [placeholder.localIdentifier], options: nil)
-                let asset:PHAsset? = assets.firstObject
-                completion?(asset)
-            } else {
-                completion?(nil)
-            }
-        })
+            
+            completion(.success(collection))
+        }
     }
     
-    fileprivate func saveImage(image: UIImage, album: PHAssetCollection, date: Date = Date(), location: CLLocation? = nil, completion:((PHAsset?)->())? = nil) {
+    fileprivate func createAssetRequest(item: SaveItem) -> PHAssetChangeRequest? {
+        switch item {
+        case let .image(image):
+            return PHAssetChangeRequest.creationRequestForAsset(from: image)
+        case let .imageUrl(url):
+            return PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: url)
+        case let .video(url):
+            return PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+        }
+    }
+
+    fileprivate func save(item: SaveItem, album: PHAssetCollection, date: Date = Date(), location: CLLocation? = nil, completion: @escaping PHAssetCompletion) {
         var placeholder: PHObjectPlaceholder?
-        self.performChanges({
-            let createAssetRequest = PHAssetChangeRequest.creationRequestForAsset(from: image)
-            createAssetRequest.creationDate = date
-            createAssetRequest.location = location
-            guard let albumChangeRequest = PHAssetCollectionChangeRequest(for: album),
-                let photoPlaceholder = createAssetRequest.placeholderForCreatedAsset else { return }
-            placeholder = photoPlaceholder
-            let fastEnumeration = NSArray(array: [photoPlaceholder] as [PHObjectPlaceholder])
-            albumChangeRequest.addAssets(fastEnumeration)
-        }, completionHandler: { success, error in
-            guard let placeholder = placeholder else {
-                completion?(nil)
+        
+        performChanges { [weak self] in
+            guard let createAssetRequest = self?.createAssetRequest(item: item) else {
+                completion(.failure(.notCreateRequestForAsset))
                 return
             }
-            if success {
-                let assets:PHFetchResult<PHAsset> = PHAsset.fetchAssets(withLocalIdentifiers: [placeholder.localIdentifier], options: nil)
-                let asset:PHAsset? = assets.firstObject
-                completion?(asset)
-            } else {
-                print("save image to photo library", error?.localizedDescription)
-                completion?(nil)
+
+            createAssetRequest.creationDate = date
+            createAssetRequest.location = location
+            
+            guard let changedRequest = PHAssetCollectionChangeRequest(for: album),
+                  let placeholderAsset = createAssetRequest.placeholderForCreatedAsset else {
+                completion(.failure(.notCreateRequestForChanges))
+                return
             }
-        })
+            
+            placeholder = placeholderAsset
+            changedRequest.addAssets(NSArray(array: [placeholderAsset]))
+            
+        } completionHandler: { (success, error) in
+            guard success, error == nil else {
+                completion(.failure(.notSavedError(error: error)))
+                return
+            }
+            
+            guard let placeholder = placeholder,
+                  let asset = PHAsset.fetchAssets(withLocalIdentifiers: [placeholder.localIdentifier], options: nil).firstObject else {
+                completion(.failure(.notFoundAsset))
+                return
+            }
+            
+            completion(.success(asset))
+        }
     }
 }

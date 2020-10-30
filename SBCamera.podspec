@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SBCamera'
-  s.version          = '0.3.8'
+  s.version          = '1.0.0'
   s.summary          = 'Swift camera SBCamera. Will include photo from library, cropper, and simple filter.'
   s.swift_versions   = '5.0'
 # This description is used to generate tags and improve search results.
@@ -39,7 +39,7 @@ Pod::Spec.new do |s|
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
    s.frameworks = 'UIKit', 'Photos'
-   s.dependency 'SwiftPermissionManager', '~> 0.2'
-   s.dependency 'RSKImageCropper', '~> 2.2'
+   s.dependency 'SwiftPermissionManager', '~> 1.0'
+   s.dependency 'RSKImageCropper', '~> 3.0'
    
 end

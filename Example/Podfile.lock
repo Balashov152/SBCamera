@@ -1,9 +1,9 @@
 PODS:
-  - RSKImageCropper (2.2.3)
-  - SBCamera (0.3.5):
-    - RSKImageCropper (~> 2.2)
-    - SwiftPermissionManager (~> 0.2)
-  - SwiftPermissionManager (0.2.4)
+  - RSKImageCropper (3.0.0)
+  - SBCamera (1.0.0):
+    - RSKImageCropper (~> 3.0)
+    - SwiftPermissionManager (~> 1.0)
+  - SwiftPermissionManager (1.0.1)
 
 DEPENDENCIES:
   - SBCamera (from `../`)
@@ -18,10 +18,10 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  RSKImageCropper: a446db0e8444a036b34f3c43db01b2373baa4b2a
-  SBCamera: 7c684333cb10ba1791b7726e310fdfd522ff7f16
-  SwiftPermissionManager: fec24ab8efe9d8ed0e6f380dd81f75f1a802dadf
+  RSKImageCropper: 81f449b4df96bdaf28e1ad6dcce28dcda2235458
+  SBCamera: c44b333a8067d3ddaf34bd366e6bb0580bc45c8f
+  SwiftPermissionManager: 206fee7959a48e9dcb5a9bb9b21d99c6cb8363cf
 
 PODFILE CHECKSUM: abc48490412c57d475eb78ebebe2d7a459945ce4
 
-COCOAPODS: 1.9.3
+COCOAPODS: 1.10.0
