@@ -260,13 +260,7 @@ open class SBCamera: NSObject {
                 guard let self = self else { return }
                 self.delegate?.sbCamera(self, didCreateUIImage: image)
             }) { [weak self] in
-                DispatchQueue.main.async {
-                    UIApplication.shared.beginIgnoringInteractionEvents()
-                }
                 self?.cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
-                    DispatchQueue.main.async {
-                        UIApplication.shared.endIgnoringInteractionEvents()
-                    }
                     guard let self = self else {
                         assertionFailure("weak self is nil")
                         return
@@ -274,7 +268,7 @@ open class SBCamera: NSObject {
                     
                     switch result {
                         
-                    case .success(content: let content):
+                    case let .success(content):
                         switch content {
                         case let .asset(asset):
                             self.delegate?.sbCamera(self, didCreatePHAsset: asset)

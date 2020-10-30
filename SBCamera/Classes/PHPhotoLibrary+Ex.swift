@@ -30,38 +30,17 @@ public extension PHPhotoLibrary {
     }
     
     func save(image: UIImage, albumName: String?, date: Date = Date(), location: CLLocation? = nil, completion:((PHAsset?) -> ())? = nil) {
-        func save() {
-            if let albumName = albumName {
-                self.getAlbum(name: albumName) { album in
-                    guard let album = album else {
-                        completion?(nil)
-                        return
-                    }
-                    self.saveImage(image: image, album: album, date: date, location: location, completion: completion)
-                }
-            }
+        guard let albumName = albumName else {
+            completion?(nil)
+            return
         }
         
-        if #available(iOS 14, *) {
-            if PHPhotoLibrary.authorizationStatus(for: .readWrite) == PHAuthorizationStatus.authorized {
-                save()
-            } else {
-                PHPhotoLibrary.requestAuthorization(for: .readWrite) { (status) in
-                    if status == .authorized {
-                        save()
-                    }
-                }
+        self.getAlbum(name: albumName) { album in
+            guard let album = album else {
+                completion?(nil)
+                return
             }
-        } else {
-            if PHPhotoLibrary.authorizationStatus() == .authorized {
-                save()
-            } else {
-                PHPhotoLibrary.requestAuthorization({ (status) in
-                    if status == .authorized {
-                        save()
-                    }
-                })
-            }
+            self.saveImage(image: image, album: album, date: date, location: location, completion: completion)
         }
     }
     

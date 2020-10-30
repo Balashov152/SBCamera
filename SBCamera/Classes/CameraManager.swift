@@ -537,24 +537,19 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             if PHPhotoLibrary.authorizationStatus(for: .readWrite) == PHAuthorizationStatus.authorized {
                 self._saveImageToLibrary(image: image, imageCompletion)
             } else {
-                PHPhotoLibrary.requestAuthorization(for: .readWrite) { (status) in
-                    if status == .authorized {
+                imageCompletion(.failure(CaptureError.assetNotSaved))
+            }
+        } else {
+            // make sure that doesn't fail the first time
+            if PHPhotoLibrary.authorizationStatus() != .authorized {
+                PHPhotoLibrary.requestAuthorization { (status) in
+                    if status == PHAuthorizationStatus.authorized {
                         self._saveImageToLibrary(image: image, imageCompletion)
                     }
                 }
+            } else {
+                self._saveImageToLibrary(image: image, imageCompletion)
             }
-        } else {
-        
-        // make sure that doesn't fail the first time
-        if PHPhotoLibrary.authorizationStatus() != .authorized {
-            PHPhotoLibrary.requestAuthorization { (status) in
-                if status == PHAuthorizationStatus.authorized {
-                    self._saveImageToLibrary(image: image, imageCompletion)
-                }
-            }
-        } else {
-            self._saveImageToLibrary(image: image, imageCompletion)
-        }
         }
     }
     
@@ -666,7 +661,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     }
     
     fileprivate func _saveImageToLibrary(image: UIImage, _ imageCompletion: @escaping (CaptureResult) -> Void) {
-        
         let location = self.locationManager?.latestLocation
         let date = Date()
         
