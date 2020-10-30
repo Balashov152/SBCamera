@@ -102,7 +102,7 @@ open class SBCamera: NSObject {
     }
     
     private func checkCameraPermission(access: @escaping () -> ()) {
-        PermissionManager().checkCameraPermission(request: true, result: { [weak self] (result) in
+        PermissionManager().checkCameraPermission(request: true, result: { (result) in
             switch result {
             case .success:
                 DispatchQueue.main.async {
@@ -297,7 +297,7 @@ open class SBCamera: NSObject {
                         }
                     }
                 case let .failure(error):
-                    print("permission photo library is denied")
+                    print("permission photo library is denied reason - \(error)")
                     guard let self = self else { return }
                     self.delegate?.sbCamera(self, didCreateUIImage: image)
                 }
@@ -325,7 +325,7 @@ extension SBCamera: RSKImageCropViewControllerDelegate {
     
     public func imageCropViewController(_ controller: RSKImageCropViewController, didCropImage croppedImage: UIImage, usingCropRect cropRect: CGRect, rotationAngle: CGFloat) {
         didCropImage(image: croppedImage)
-        controller.dismiss(animated: true, completion: { [weak self] in })
+        controller.dismiss(animated: true)
     }
 }
 

@@ -38,7 +38,7 @@ public extension PHPhotoLibrary {
     
     // MARK: - Public
     // if albumName == nil, wiil be get first album from library
-    public func save(item: SaveItem, albumName: String?, date: Date = Date(), location: CLLocation? = nil, completion: @escaping PHAssetCompletion) {
+    func save(item: SaveItem, albumName: String?, date: Date = Date(), location: CLLocation? = nil, completion: @escaping PHAssetCompletion) {
         PermissionManager().checkPhotoLibraryPermission(request: .readWrite) { [weak self] (result) in
             switch result {
             case .success:
@@ -51,6 +51,7 @@ public extension PHPhotoLibrary {
                     }
                 }
             case let.failure(error):
+                print("permission error - \(error.localizedDescription)")
                 completion(.failure(.notPermission))
             }
         }
