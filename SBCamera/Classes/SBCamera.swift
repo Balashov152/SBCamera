@@ -274,7 +274,14 @@ open class SBCamera: NSObject {
         case .phAssetImage:
             PermissionManager().checkPhotoLibraryPermission(request: .readWrite, result: { [weak self] (result) in
                 switch result {
-                case .success:
+                case let .success(type):
+                    guard type == .photoLibrary else {
+                        print("permission photo library is limited, not save")
+                        guard let self = self else { return }
+                        self.delegate?.sbCamera(self, didCreateUIImage: image)
+                        return
+                    }
+                    
                     self?.cameraManager.saveImageToPhotoLibrary(image: image) { [weak self] (result) in
                         guard let self = self else {
                             assertionFailure("weak self is nil")
