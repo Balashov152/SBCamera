@@ -13,6 +13,7 @@ import Photos
 import SwiftPermissionManager
 import UIKit
 import RSKImageCropper
+import PhotosUI
 
 public protocol SBCameraViewControllble {
     var cameraView: UIView { get }
@@ -60,6 +61,9 @@ open class SBCamera: NSObject {
     
     public lazy var cameraManager = CameraManager()
     public var imagePickerController: UIViewController?
+    public var imagePickerSelectionLimit: Int = 1
+    
+    public var currentPhotoLibraryPermissionIsLimited: Bool = false
     
     public init(controller: ViewController, typeMedia: TypeMedia) {
         self.viewController = controller
@@ -90,7 +94,8 @@ open class SBCamera: NSObject {
         
         PermissionManager().checkPhotoLibraryPermission(request: .readWrite, result: { [weak self] (result) in
             switch result {
-            case .success:
+            case let .success(type):
+                self?.currentPhotoLibraryPermissionIsLimited = type == .photoLibraryLimited
                 DispatchQueue.main.async {
                     self?.openImagePicker()
                 }
@@ -191,17 +196,7 @@ open class SBCamera: NSObject {
     
     private func openImagePicker() {
         if imagePickerController == nil { // if need use standart UIImagePickerController
-           let uiImagePickerController = UIImagePickerController()
-            uiImagePickerController.sourceType = .photoLibrary
-            uiImagePickerController.delegate = self
-            var mediaTypes = [String]()
-            switch typeMedia {
-            case .uiImage, .phAssetImage:
-                mediaTypes = [kUTTypeImage as String]
-            }
-            
-            uiImagePickerController.mediaTypes = mediaTypes
-            self.imagePickerController = uiImagePickerController
+            imagePickerController = createUIImagePickerController()
         }
         
         guard let imagePickerController = imagePickerController else {
@@ -212,6 +207,20 @@ open class SBCamera: NSObject {
         viewController?.present(imagePickerController, animated: true)
     }
     
+    private func createUIImagePickerController() -> UIImagePickerController {
+        let imagePicker = UIImagePickerController()
+         imagePicker.sourceType = .photoLibrary
+         imagePicker.delegate = self
+         var mediaTypes = [String]()
+         switch typeMedia {
+         case .uiImage, .phAssetImage:
+             mediaTypes = [kUTTypeImage as String]
+         }
+         
+         imagePicker.mediaTypes = mediaTypes
+        return imagePicker
+    }
+    
     private func doneSeletedMediaFromLibrary(pickerInfo info: [UIImagePickerController.InfoKey: Any]) {
         guard let mediaType = info[.mediaType] as? String else { return }
         print("Image selected from library")
@@ -220,7 +229,10 @@ open class SBCamera: NSObject {
         case .phAssetImage:
             if mediaType == (kUTTypeImage as String) {
                 
-                if #available(iOS 11.0, *) {
+                if #available(iOS 14.0, *), currentPhotoLibraryPermissionIsLimited,
+                   let image = info[.originalImage] as? UIImage {
+                    didGetImageFromPhotoLibrary(image: image)
+                } else if #available(iOS 11.0, *) {
                     if let asset = info[.phAsset] as? PHAsset {
                         didGetAssetFromPhotoLibrary(asset: asset)
                     }

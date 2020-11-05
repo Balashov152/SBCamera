@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SBCamera'
-  s.version          = '1.0.1'
+  s.version          = '1.0.2'
   s.summary          = 'Swift camera SBCamera. Will include photo from library, cropper, and simple filter.'
   s.swift_versions   = '5.0'
 # This description is used to generate tags and improve search results.
@@ -28,7 +28,7 @@ Pod::Spec.new do |s|
   s.source           = { :git => 'https://github.com/Balashov152/SBCamera.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '11.0'
   s.pod_target_xcconfig = { "SWIFT_VERSION" => "5.0" }
 
   s.source_files = 'SBCamera/Classes/**/*'
@@ -41,5 +41,5 @@ Pod::Spec.new do |s|
    s.frameworks = 'UIKit', 'Photos'
    s.dependency 'SwiftPermissionManager', '~> 1.0'
    s.dependency 'RSKImageCropper', '~> 3.0'
-   
+
 end
