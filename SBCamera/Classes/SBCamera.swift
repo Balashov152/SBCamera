@@ -61,6 +61,9 @@ open class SBCamera: NSObject {
     
     public lazy var cameraManager = CameraManager()
     public var imagePickerController: UIViewController?
+    public var imagePickerControllerIsDefault: Bool {
+        imagePickerController == nil || imagePickerController is UIImagePickerController
+    }
     public var imagePickerSelectionLimit: Int = 1
     
     public var currentPhotoLibraryPermissionIsLimited: Bool = false
@@ -92,18 +95,24 @@ open class SBCamera: NSObject {
             return
         }
         
-        PermissionManager().checkPhotoLibraryPermission(request: .readWrite, result: { [weak self] (result) in
-            switch result {
-            case let .success(type):
-                self?.currentPhotoLibraryPermissionIsLimited = type == .photoLibraryLimited
-                DispatchQueue.main.async {
-                    self?.openImagePicker()
-                }
-            case let .failure(error):
-                debugPrint("checkPhotoLibraryPermission error - \(error.localizedDescription)")
-                PermissionManager().openSettings(type: .photoLibrary, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
+        if #available(iOS 14, *), imagePickerControllerIsDefault { // if use default UIImagePicker, permission not required
+            DispatchQueue.main.async { [weak self] in
+                self?.openImagePicker()
             }
-        })
+        } else {
+            PermissionManager().checkPhotoLibraryPermission(request: .readWrite, result: { [weak self] (result) in
+                switch result {
+                case let .success(type):
+                    self?.currentPhotoLibraryPermissionIsLimited = type == .photoLibraryLimited
+                    DispatchQueue.main.async {
+                        self?.openImagePicker()
+                    }
+                case let .failure(error):
+                    debugPrint("checkPhotoLibraryPermission error - \(error.localizedDescription)")
+                    PermissionManager().openSettings(type: .photoLibrary, localized: SBCamera.permissionManagerLocalizedForPhotoAlert)
+                }
+            })
+        }
     }
     
     private func checkCameraPermission(access: @escaping () -> ()) {
@@ -229,7 +238,7 @@ open class SBCamera: NSObject {
         case .phAssetImage:
             if mediaType == (kUTTypeImage as String) {
                 
-                if #available(iOS 14.0, *), currentPhotoLibraryPermissionIsLimited,
+                if #available(iOS 14.0, *), imagePickerControllerIsDefault,
                    let image = info[.originalImage] as? UIImage {
                     didGetImageFromPhotoLibrary(image: image)
                 } else if #available(iOS 11.0, *) {

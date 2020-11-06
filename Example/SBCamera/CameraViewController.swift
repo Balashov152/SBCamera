@@ -71,11 +71,11 @@ extension CameraViewController: SBCameraDelegate {
         }
     }
     
-    func sbCamera(_ camera: SBCamera, catchError error: Error) {
-        
-    }
+    func sbCamera(_ camera: SBCamera, catchError error: Error) {}
     
     func sbCamera(_ camera: SBCamera, didCreateUIImage image: UIImage) {
-        didCreatePhoto(image)
+        DispatchQueue.main.async {
+            self.didCreatePhoto(image)
+        }
     }
 }
